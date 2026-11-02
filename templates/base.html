@@ -1,0 +1,43 @@
+
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>
+        {% block title %}Mistral Assistant{% endblock %}
+    </title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', path='style.css') }}">
+</head>
+
+<body>
+
+    <nav class="navbar">
+
+        <a href="/" class="logo">
+            ✦ Mistral Assistant
+        </a>
+
+        <span>Intelligence artificielle</span>
+
+    </nav>
+
+    <main class="container">
+
+        {% block content %}
+        {% endblock %}
+
+    </main>
+
+    <footer>
+        © 2026 - Mon Assistant IA
+    </footer>
+
+</body>
+</html>

@@ -1,0 +1,66 @@
+
+{% extends "base.html" %}
+
+{% block title %}Résultat - Assistant IA{% endblock %}
+
+{% block content %}
+
+<div class="result-container">
+
+    <h1>Résultat de votre demande</h1>
+
+    {% if error %}
+
+        <div class="error">
+            {{ error }}
+        </div>
+
+    {% else %}
+
+        <div class="question-card">
+            <h3>Votre question</h3>
+            <p>{{ prompt }}</p>
+            <small>Modèle utilisé : {{ model }}</small>
+        </div>
+
+        {% if mode == "question" %}
+
+            <div class="answer-card">
+
+                <h2>✦ Réponse de l'assistant</h2>
+
+                <p>{{ answer }}</p>
+
+            </div>
+
+        {% elif mode == "generate" %}
+
+            <div class="answer-card">
+
+                <h2>{{ data.sujet }}</h2>
+
+                <h3>Explication</h3>
+
+                <p>{{ data.explication }}</p>
+
+                <h3>Utilisations</h3>
+
+                <ul>
+                    {% for item in data.utilisation %}
+                        <li>{{ item }}</li>
+                    {% endfor %}
+                </ul>
+
+            </div>
+
+        {% endif %}
+
+    {% endif %}
+
+    <a href="/" class="back-btn">
+        ← Retour à l'accueil
+    </a>
+
+</div>
+
+{% endblock %}

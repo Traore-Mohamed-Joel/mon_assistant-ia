@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mistral Assistant</title>
+
+    <link rel="stylesheet" href="{{ url_for('static', path='style.css') }}">
+</head>
+
+<body>
+
+<div class="app">
+
+    <aside class="sidebar">
+        <h2>✦ Mistral AI</h2>
+
+        <button type="button" class="new-chat" id="new-chat">
+            + Nouvelle conversation
+        </button>
+
+        <div class="sidebar-footer">
+            <p>Assistant intelligent</p>
+            <small>Propulsé par Mistral</small>
+        </div>
+    </aside>
+
+    <main class="main">
+
+        <header class="topbar">
+            <div>
+                <h2>Mon assistant</h2>
+                <p>Posez vos questions librement</p>
+            </div>
+
+            <span class="status">● En ligne</span>
+        </header>
+
+        <section class="chat-area" id="chat-area">
+
+            <div class="welcome" id="welcome">
+                <div class="welcome-icon">✦</div>
+                <h1>Bonjour ! 👋</h1>
+                <p>Comment puis-je vous aider aujourd'hui ?</p>
+            </div>
+
+        </section>
+
+        <section class="input-area">
+
+            <div class="model-choice">
+                <label for="model">Modèle IA :</label>
+
+                <select id="model" name="model">
+                    {% for model in models %}
+                    <option value="{{ model.id }}"
+                        {% if selected_model == model.id %}selected{% endif %}>
+                        {{ model.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <form id="chat-form">
+
+                <div class="message-box">
+
+                    <textarea
+                        id="prompt"
+                        placeholder="Écrivez votre message..."
+                        rows="3"
+                        required
+                    ></textarea>
+
+                    <button type="submit" id="send-button">
+                        Envoyer ↑
+                    </button>
+
+                </div>
+
+            </form>
+
+            <p class="disclaimer">
+                Mistral AI peut parfois produire des réponses incorrectes.
+            </p>
+
+        </section>
+
+    </main>
+
+</div>
+
+<script>
+    const chatArea = document.getElementById("chat-area");
+    const chatForm = document.getElementById("chat-form");
+    const promptInput = document.getElementById("prompt");
+    const modelSelect = document.getElementById("model");
+    const sendButton = document.getElementById("send-button");
+    const newChatButton = document.getElementById("new-chat");
+    const welcome = document.getElementById("welcome");
+
+    // Historique initial éventuellement fourni par FastAPI
+    let messages = {{ messages | default([]) | tojson }};
+
+    function displayMessage(role, content) {
+        if (welcome) {
+            welcome.remove();
+        }
+
+        const row = document.createElement("div");
+        row.className = `message-row ${role}`;
+
+        const avatar = document.createElement("div");
+        avatar.className = "avatar";
+        avatar.textContent = role === "user" ? "Vous" : "✦";
+
+        const messageContent = document.createElement("div");
+        messageContent.className = "message-content";
+
+        const author = document.createElement("strong");
+        author.textContent = role === "user" ? "Vous" : "Mistral Assistant";
+
+        const bubble = document.createElement("div");
+        bubble.className = "bubble";
+        bubble.textContent = content;
+
+        messageContent.appendChild(author);
+        messageContent.appendChild(bubble);
+
+        row.appendChild(avatar);
+        row.appendChild(messageContent);
+
+        chatArea.appendChild(row);
+        chatArea.scrollTop = chatArea.scrollHeight;
+
+        return bubble;
+    }
+
+    // Afficher les anciens messages
+    messages.forEach(message => {
+        displayMessage(message.role, message.content);
+    });
+
+    chatForm.addEventListener("submit", async function(event) {
+        event.preventDefault();
+
+        const prompt = promptInput.value.trim();
+
+        if (!prompt) return;
+
+        // Afficher immédiatement le message de l'utilisateur
+        displayMessage("user", prompt);
+
+        messages.push({
+            role: "user",
+            content: prompt
+        });
+
+        promptInput.value = "";
+        sendButton.disabled = true;
+        sendButton.textContent = "Réponse...";
+
+        const loadingBubble = displayMessage("assistant", "Mistral réfléchit...");
+
+        try {
+            const response = await fetch("/chat", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    messages: messages,
+                    model: modelSelect.value
+                })
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.detail || "Une erreur est survenue.");
+            }
+
+            // Remplacer le message d'attente par la réponse
+            loadingBubble.textContent = data.reply;
+
+            messages.push({
+                role: "assistant",
+                content: data.reply
+            });
+
+        } catch (error) {
+            loadingBubble.textContent = "Erreur : " + error.message;
+
+            // Retirer le message utilisateur de l'historique
+            // pour éviter de conserver une question non traitée.
+            messages.pop();
+
+        } finally {
+            sendButton.disabled = false;
+            sendButton.textContent = "Envoyer ↑";
+            promptInput.focus();
+            chatArea.scrollTop = chatArea.scrollHeight;
+        }
+    });
+
+    // Envoyer avec Entrée ; nouvelle ligne avec Maj + Entrée
+    promptInput.addEventListener("keydown", function(event) {
+        if (event.key === "Enter" && !event.shiftKey) {
+            event.preventDefault();
+            chatForm.requestSubmit();
+        }
+    });
+
+    // Réinitialiser la conversation
+    newChatButton.addEventListener("click", function() {
+        messages = [];
+        chatArea.innerHTML = `
+            <div class="welcome">
+                <div class="welcome-icon">✦</div>
+                <h1>Bonjour ! 👋</h1>
+                <p>Comment puis-je vous aider aujourd'hui ?</p>
+            </div>
+        `;
+        promptInput.value = "";
+        promptInput.focus();
+    });
+</script>
+
+</body>
+</html>
