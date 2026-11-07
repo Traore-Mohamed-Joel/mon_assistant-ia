@@ -175,6 +175,20 @@ async def home(request: Request):
         }
     )
 
+
+# --------------------------------------------------
+# ROUTE MODELES
+# --------------------------------------------------
+
+@app.get("/models")
+async def get_models():
+
+    return {
+        "models": AVAILABLE_MODELS
+    }
+
+
+
 # --------------------------------------------------
 # ROUTE CHAT
 # --------------------------------------------------
@@ -246,19 +260,7 @@ async def chat(request: ChatRequest):
             detail="Impossible d'obtenir une réponse de Mistral."
         )
 
-
-# --------------------------------------------------
-# ROUTE MODELES
-# --------------------------------------------------
-
-@app.get("/models")
-async def get_models():
-
-    return {
-        "models": AVAILABLE_MODELS
-    }
-
-
+    
 # --------------------------------------------------
 # ROUTE ASSISTANT HTML
 # --------------------------------------------------
